@@ -19,7 +19,7 @@ import {
   Calendar,
   ShieldCheck
 } from 'lucide-react';
-import { SAMPLE_SHIPMENTS } from '../data/mockData';
+import { SAMPLE_SHIPMENTS, getShipmentByWaybill } from '../data/mockData';
 import { ShipmentData } from '../types';
 
 interface TrackingModalProps {
@@ -47,9 +47,19 @@ export const TrackingModal: React.FC<TrackingModalProps> = ({
     }
   }, [initialWaybill, isOpen]);
 
+  // Escape key handler
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
-  const shipment: ShipmentData | undefined = SAMPLE_SHIPMENTS[currentWaybill] || SAMPLE_SHIPMENTS['OMI-UKNG-2026-00124'];
+  const shipment: ShipmentData = getShipmentByWaybill(currentWaybill);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -169,7 +179,12 @@ export const TrackingModal: React.FC<TrackingModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-[#15110F]/80 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 animate-fadeIn">
+    <div 
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="tracking-modal-title"
+      className="fixed inset-0 z-50 overflow-y-auto bg-[#15110F]/80 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 animate-fadeIn"
+    >
       <div className="bg-white w-full max-w-4xl rounded-md shadow-2xl border border-[#EAE4D8] overflow-hidden flex flex-col max-h-[92vh]">
         
         {/* Modal Top Header */}
@@ -182,7 +197,7 @@ export const TrackingModal: React.FC<TrackingModalProps> = ({
               <div className="text-[11px] font-bold text-[#C9A227] tracking-widest uppercase">
                 BILATERAL WAYBILL TRACKER
               </div>
-              <h2 className="font-display text-[24px] sm:text-[28px] tracking-wider leading-none text-white">
+              <h2 id="tracking-modal-title" className="font-display text-[24px] sm:text-[28px] tracking-wider leading-none text-white">
                 {shipment.waybillNumber}
               </h2>
             </div>
@@ -500,7 +515,7 @@ export const TrackingModal: React.FC<TrackingModalProps> = ({
             <div className="text-[9px] text-stone-500">Authorized Agent Signature</div>
           </div>
           <div className="border border-dashed border-stone-400 p-3 rounded text-center flex flex-col justify-between">
-            <div className="font-bold text-stone-800">RECEIVING CONSI-GNEE</div>
+            <div className="font-bold text-stone-800">RECEIVING CONSIGNEE</div>
             <div className="h-6 border-b border-stone-300"></div>
             <div className="text-[9px] text-stone-500">Proof of Delivery (POD) & Date</div>
           </div>

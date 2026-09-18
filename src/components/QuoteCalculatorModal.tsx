@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   X, 
   Calculator, 
@@ -8,7 +8,7 @@ import {
   Package, 
   ArrowRight, 
   Check, 
-  Info,
+  Info, 
   ShieldCheck
 } from 'lucide-react';
 
@@ -33,10 +33,24 @@ export const QuoteCalculatorModal: React.FC<QuoteCalculatorModalProps> = ({
   const [declaredValueGbp, setDeclaredValueGbp] = useState<number>(150);
   const [includeInsurance, setIncludeInsurance] = useState<boolean>(true);
 
+  // Escape key handler
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   // Volumetric weight divisor (5000 for air express, 6000 for standard)
   const volDivisor = serviceType === 'air_express' ? 5000 : 6000;
-  const volumetricWeightKg = Math.round(((lengthCm * widthCm * heightCm) / volDivisor) * 10) / 10;
-  const billableWeightKg = Math.max(weightKg, volumetricWeightKg);
+  const safeWeight = Math.max(0.5, weightKg || 1);
+  const safeLength = Math.max(1, lengthCm || 1);
+  const safeWidth = Math.max(1, widthCm || 1);
+  const safeHeight = Math.max(1, heightCm || 1);
+  const volumetricWeightKg = Math.round(((safeLength * safeWidth * safeHeight) / volDivisor) * 10) / 10;
+  const billableWeightKg = Math.max(safeWeight, volumetricWeightKg);
 
   // Calculation pricing logic
   const calculation = useMemo(() => {
@@ -109,7 +123,12 @@ export const QuoteCalculatorModal: React.FC<QuoteCalculatorModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-[#15110F]/80 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 animate-fadeIn">
+    <div 
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="quote-modal-title"
+      className="fixed inset-0 z-50 overflow-y-auto bg-[#15110F]/80 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 animate-fadeIn"
+    >
       <div className="bg-white w-full max-w-4xl rounded-md shadow-2xl border border-[#EAE4D8] overflow-hidden flex flex-col max-h-[92vh]">
         
         {/* Modal Header */}
@@ -122,7 +141,7 @@ export const QuoteCalculatorModal: React.FC<QuoteCalculatorModalProps> = ({
               <div className="text-[11px] font-bold text-[#C9A227] tracking-widest uppercase">
                 INSTANT TARIFF CALCULATOR
               </div>
-              <h2 className="font-display text-[24px] sm:text-[28px] tracking-wider leading-none text-white">
+              <h2 id="quote-modal-title" className="font-display text-[24px] sm:text-[28px] tracking-wider leading-none text-white">
                 UK ⇄ NIGERIA CORRIDOR ESTIMATE
               </h2>
             </div>
@@ -267,8 +286,9 @@ export const QuoteCalculatorModal: React.FC<QuoteCalculatorModalProps> = ({
                     type="number"
                     min="1"
                     max="5000"
-                    value={weightKg}
-                    onChange={(e) => setWeightKg(Number(e.target.value))}
+                    value={weightKg || ''}
+                    onChange={(e) => setWeightKg(e.target.value === '' ? ('' as any) : Math.max(0, Number(e.target.value)))}
+                    onBlur={() => { if (!weightKg || Number(weightKg) < 1) setWeightKg(1); }}
                     className="w-full bg-white border border-[#D8D1C5] p-2 rounded-xs text-[13px] font-bold text-[#15110F]"
                   />
                 </div>
@@ -278,8 +298,9 @@ export const QuoteCalculatorModal: React.FC<QuoteCalculatorModalProps> = ({
                     type="number"
                     min="5"
                     max="500"
-                    value={lengthCm}
-                    onChange={(e) => setLengthCm(Number(e.target.value))}
+                    value={lengthCm || ''}
+                    onChange={(e) => setLengthCm(e.target.value === '' ? ('' as any) : Math.max(0, Number(e.target.value)))}
+                    onBlur={() => { if (!lengthCm || Number(lengthCm) < 5) setLengthCm(5); }}
                     className="w-full bg-white border border-[#D8D1C5] p-2 rounded-xs text-[13px] font-bold text-[#15110F]"
                   />
                 </div>
@@ -289,8 +310,9 @@ export const QuoteCalculatorModal: React.FC<QuoteCalculatorModalProps> = ({
                     type="number"
                     min="5"
                     max="500"
-                    value={widthCm}
-                    onChange={(e) => setWidthCm(Number(e.target.value))}
+                    value={widthCm || ''}
+                    onChange={(e) => setWidthCm(e.target.value === '' ? ('' as any) : Math.max(0, Number(e.target.value)))}
+                    onBlur={() => { if (!widthCm || Number(widthCm) < 5) setWidthCm(5); }}
                     className="w-full bg-white border border-[#D8D1C5] p-2 rounded-xs text-[13px] font-bold text-[#15110F]"
                   />
                 </div>
@@ -300,8 +322,9 @@ export const QuoteCalculatorModal: React.FC<QuoteCalculatorModalProps> = ({
                     type="number"
                     min="5"
                     max="500"
-                    value={heightCm}
-                    onChange={(e) => setHeightCm(Number(e.target.value))}
+                    value={heightCm || ''}
+                    onChange={(e) => setHeightCm(e.target.value === '' ? ('' as any) : Math.max(0, Number(e.target.value)))}
+                    onBlur={() => { if (!heightCm || Number(heightCm) < 5) setHeightCm(5); }}
                     className="w-full bg-white border border-[#D8D1C5] p-2 rounded-xs text-[13px] font-bold text-[#15110F]"
                   />
                 </div>

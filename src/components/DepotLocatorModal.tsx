@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   X, 
   MapPin, 
@@ -29,6 +29,21 @@ export const DepotLocatorModal: React.FC<DepotLocatorModalProps> = ({
   const [selectedId, setSelectedId] = useState(initialDepotId);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (initialDepotId) {
+      setSelectedId(initialDepotId);
+    }
+  }, [initialDepotId, isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const currentDepot = DEPOT_LOCATIONS.find((d) => d.id === selectedId) || DEPOT_LOCATIONS[0];
@@ -40,7 +55,12 @@ export const DepotLocatorModal: React.FC<DepotLocatorModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-[#15110F]/80 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 animate-fadeIn">
+    <div 
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="depot-modal-title"
+      className="fixed inset-0 z-50 overflow-y-auto bg-[#15110F]/80 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 animate-fadeIn"
+    >
       <div className="bg-white w-full max-w-4xl rounded-md shadow-2xl border border-[#EAE4D8] overflow-hidden flex flex-col max-h-[92vh]">
         
         {/* Header */}
@@ -53,14 +73,16 @@ export const DepotLocatorModal: React.FC<DepotLocatorModalProps> = ({
               <div className="text-[11px] font-bold text-[#C9A227] tracking-widest uppercase">
                 BILATERAL DEPOT & DROP-OFF NETWORK
               </div>
-              <h2 className="font-display text-[24px] sm:text-[28px] tracking-wider leading-none text-white">
-                CONSOLIDATION HUBS & HUBS
+              <h2 id="depot-modal-title" className="font-display text-[24px] sm:text-[28px] tracking-wider leading-none text-white">
+                CONSOLIDATION HUBS & TERMINALS
               </h2>
             </div>
           </div>
 
           <button
+            id="depot-modal-close-btn"
             onClick={onClose}
+            aria-label="Close depot locator"
             className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />

@@ -131,6 +131,119 @@ export const SAMPLE_SHIPMENTS: Record<string, ShipmentData> = {
   },
 };
 
+// Helper function to dynamically retrieve or generate shipment data for any waybill
+export const getShipmentByWaybill = (waybill: string): ShipmentData => {
+  const normalized = waybill.trim().toUpperCase();
+  if (SAMPLE_SHIPMENTS[normalized]) {
+    return SAMPLE_SHIPMENTS[normalized];
+  }
+
+  // If waybill starts with OMI or has standard pattern, create a realistic active shipment record
+  const isSea = normalized.includes('SEA') || normalized.includes('CONT') || normalized.includes('MSKU');
+  const transitMode = isSea ? 'sea' : 'air';
+  
+  const simulated: ShipmentData = {
+    waybillNumber: normalized,
+    serviceType: isSea 
+      ? 'Ocean Freight LCL Container Manifest (Tilbury ➔ Apapa)' 
+      : 'Priority Air Freight Express (LHR ➔ LOS)',
+    transitMode,
+    origin: {
+      city: isSea ? 'Tilbury Port' : 'London',
+      country: 'United Kingdom',
+      hub: isSea ? 'Port of Tilbury Container Terminal' : 'London Consolidation Depot (Acton)',
+    },
+    destination: {
+      city: 'Lagos',
+      country: 'Nigeria',
+      address: 'Plot 22 Commercial Avenue, Ikeja Industrial Estate, Lagos',
+    },
+    sender: 'Corridor Shipper (United Kingdom)',
+    receiver: 'Registered Consignee (Lagos, Nigeria)',
+    pieces: isSea ? 4 : 2,
+    weightKg: isSea ? 180.0 : 12.5,
+    volumetricWeightKg: isSea ? 210.0 : 10.8,
+    dimensions: isSea ? '100 x 80 x 120 cm' : '40 x 30 x 25 cm',
+    contents: 'Consignment under customs electronic seal',
+    estimatedDelivery: isSea ? '28 Sep 2026, 17:00 GMT+1' : 'Tomorrow, 16:00 GMT+1',
+    currentStatus: isSea 
+      ? 'Vessel Sailing - Equator Atlantic Passage' 
+      : 'Customs Cleared — Out for Dispatch to Destination Hub',
+    statusPercent: isSea ? 60 : 80,
+    events: isSea ? [
+      {
+        id: 'sea-sim-1',
+        timestamp: '10 Sep 2026, 09:00 GMT',
+        location: 'Port of Tilbury, UK',
+        status: 'Container Loaded & Customs Export Gate Pass Issued',
+        description: 'Sealed container loaded onto vessel hold with HMRC export declaration filed.',
+        completed: true,
+      },
+      {
+        id: 'sea-sim-2',
+        timestamp: '12 Sep 2026, 14:30 GMT',
+        location: 'Vessel MSC Calypso',
+        status: 'En Route to West Africa Coast',
+        description: 'Vessel navigational position logged in Atlantic corridor.',
+        completed: true,
+        isCurrent: true,
+      },
+      {
+        id: 'sea-sim-3',
+        timestamp: 'Expected 26 Sep 2026',
+        location: 'Apapa Port Container Terminal, Lagos',
+        status: 'Berthing & Consignment De-Stuffing',
+        description: 'Offloading into bonded terminal for Nigeria Customs PAAR verification.',
+        completed: false,
+      }
+    ] : [
+      {
+        id: 'air-sim-1',
+        timestamp: '16 Sep 2026, 09:40 GMT',
+        location: 'London Acton Depot, UK',
+        status: 'Shipment Received & Weighed',
+        description: 'Consignment checked into manifest and barcode scanned.',
+        completed: true,
+      },
+      {
+        id: 'air-sim-2',
+        timestamp: '16 Sep 2026, 19:15 GMT',
+        location: 'London Heathrow (LHR) Cargo Apron',
+        status: 'Loaded onto Boeing 777-200F (Flight OM-814)',
+        description: 'Pre-flight security scan and customs declaration dispatched.',
+        completed: true,
+      },
+      {
+        id: 'air-sim-3',
+        timestamp: '17 Sep 2026, 08:30 GMT+1',
+        location: 'Murtala Muhammed Airport (LOS), Cargo Terminal 2',
+        status: 'Flight Landed & Bonded Pre-Clearance Granted',
+        description: 'Nigeria Customs Service Single Window green-lane clearance confirmed.',
+        completed: true,
+        isCurrent: true,
+      },
+      {
+        id: 'air-sim-4',
+        timestamp: 'Estimated 18 Sep 2026, 15:00 GMT+1',
+        location: 'Lagos Metropolitan Delivery Hub',
+        status: 'Doorstep Delivery to Consignee',
+        description: 'Scheduled for courier dispatch with recipient OTP confirmation.',
+        completed: false,
+      },
+    ],
+  };
+
+  // Cache in SAMPLE_SHIPMENTS so subsequent queries retain same state
+  SAMPLE_SHIPMENTS[normalized] = simulated;
+  return simulated;
+};
+
+// Register newly booked shipment into SAMPLE_SHIPMENTS
+export const registerShipment = (newShipment: ShipmentData): void => {
+  SAMPLE_SHIPMENTS[newShipment.waybillNumber] = newShipment;
+};
+
+
 export const DEPOT_LOCATIONS: DepotInfo[] = [
   {
     id: 'london-acton',

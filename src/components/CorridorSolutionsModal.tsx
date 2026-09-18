@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { 
   X, 
   ShieldCheck, 
@@ -22,10 +22,25 @@ export const CorridorSolutionsModal: React.FC<CorridorSolutionsModalProps> = ({
   onClose,
   onOpenShip,
 }) => {
+  // Escape key handler
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-[#15110F]/80 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 animate-fadeIn">
+    <div 
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="corridor-modal-title"
+      className="fixed inset-0 z-50 overflow-y-auto bg-[#15110F]/80 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 animate-fadeIn"
+    >
       <div className="bg-white w-full max-w-4xl rounded-md shadow-2xl border border-[#EAE4D8] overflow-hidden flex flex-col max-h-[92vh]">
         
         {/* Header */}
@@ -38,14 +53,16 @@ export const CorridorSolutionsModal: React.FC<CorridorSolutionsModalProps> = ({
               <div className="text-[11px] font-bold text-[#C9A227] tracking-widest uppercase">
                 BILATERAL TRADE & CUSTOMS PROTOCOL
               </div>
-              <h2 className="font-display text-[24px] sm:text-[28px] tracking-wider leading-none text-white">
+              <h2 id="corridor-modal-title" className="font-display text-[24px] sm:text-[28px] tracking-wider leading-none text-white">
                 UK–NIGERIA CUSTOMS CLEARANCE ARCHITECTURE
               </h2>
             </div>
           </div>
 
           <button
+            id="corridor-modal-close-btn"
             onClick={onClose}
+            aria-label="Close customs notice"
             className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />

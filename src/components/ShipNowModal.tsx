@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   X, 
   Package, 
@@ -12,6 +12,8 @@ import {
   Barcode,
   Truck
 } from 'lucide-react';
+import { registerShipment } from '../data/mockData';
+import { ShipmentData } from '../types';
 
 interface ShipNowModalProps {
   isOpen: boolean;
@@ -44,6 +46,43 @@ export const ShipNowModal: React.FC<ShipNowModalProps> = ({
   const [contents, setContents] = useState('Personal clothing, documents, and packaged electronics');
   const [generatedWaybill, setGeneratedWaybill] = useState('');
 
+  // Synchronize prefillData when opening
+  useEffect(() => {
+    if (isOpen) {
+      setStep(1);
+      if (prefillData) {
+        if (prefillData.weightKg) setWeightKg(prefillData.weightKg);
+        if (prefillData.origin === 'london_van' || prefillData.origin === 'midlands') {
+          setSenderCollectionMethod('van_pickup');
+        } else {
+          setSenderCollectionMethod('dropoff');
+        }
+        if (prefillData.destination === 'abuja') {
+          setReceiverCity('Abuja');
+          setReceiverAddress('Plot 310, Central Business District, Abuja, FCT');
+        } else if (prefillData.destination === 'port_harcourt') {
+          setReceiverCity('Port Harcourt');
+          setReceiverAddress('Trans-Amadi Industrial Layout, Port Harcourt, Rivers State');
+        }
+        if (prefillData.serviceType === 'sea_lcl' || prefillData.serviceType === 'sea_fcl') {
+          setPackageType(prefillData.serviceType === 'sea_fcl' ? 'ocean_fcl' : 'sea_freight');
+        } else {
+          setPackageType('express_parcel');
+        }
+      }
+    }
+  }, [isOpen, prefillData]);
+
+  // Escape key handler
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const handleNextStep = () => {
@@ -52,8 +91,79 @@ export const ShipNowModal: React.FC<ShipNowModalProps> = ({
     } else if (step === 2) {
       // Generate unique waybill
       const randomId = Math.floor(10000 + Math.random() * 90000);
-      const newWaybill = `OMI-UKNG-2026-${randomId}`;
+      const isSea = packageType.includes('sea') || packageType.includes('ocean');
+      const newWaybill = isSea ? `OMI-SEANG-2026-${randomId}` : `OMI-UKNG-2026-${randomId}`;
       setGeneratedWaybill(newWaybill);
+
+      // Create and register real shipment in data store
+      const newShipmentData: ShipmentData = {
+        waybillNumber: newWaybill,
+        serviceType: packageType === 'ocean_fcl' 
+          ? 'Ocean Freight FCL Full 20ft Container (Tilbury ➔ Apapa)' 
+          : isSea 
+          ? 'Ocean Freight LCL Shared Groupage' 
+          : 'Priority Air Freight Express (Direct LHR ➔ LOS)',
+        transitMode: isSea ? 'sea' : 'air',
+        origin: {
+          city: 'London',
+          country: 'United Kingdom',
+          hub: senderCollectionMethod === 'van_pickup' 
+            ? 'London Mobile Courier Collection Run' 
+            : 'London Consolidation Depot (Acton)',
+        },
+        destination: {
+          city: receiverCity || 'Lagos',
+          country: 'Nigeria',
+          address: receiverAddress || 'Lagos Metropolitan Area, Nigeria',
+        },
+        sender: `${senderName} (${senderPhone})`,
+        receiver: `${receiverName} (${receiverPhone})`,
+        pieces: 1,
+        weightKg: Number(weightKg) || 8,
+        volumetricWeightKg: Number(weightKg) || 8,
+        dimensions: '40 x 30 x 25 cm',
+        contents: contents || 'General merchandise & cargo consignment',
+        estimatedDelivery: isSea ? '3–4 Weeks (Vessel Voyage)' : '3–5 Business Days (Flight OM-814)',
+        currentStatus: 'Consignment Registered — Ready for Depot Intake / Collection',
+        statusPercent: 15,
+        events: [
+          {
+            id: `evt-${Date.now()}-1`,
+            timestamp: 'Just now',
+            location: senderCollectionMethod === 'van_pickup' ? 'London Mobile Route' : 'London Acton Depot, UK',
+            status: 'Consignment Registered & Waybill Issued',
+            description: 'Shipment manifest registered onto UK ⇄ Nigeria customs pre-clearance corridor.',
+            completed: true,
+            isCurrent: true,
+          },
+          {
+            id: `evt-${Date.now()}-2`,
+            timestamp: 'Next Working Day',
+            location: 'London Acton Consolidation Hub',
+            status: 'Awaiting Physical Intake / Inspection',
+            description: 'Barcode tag verified and piece staged for flight security screening.',
+            completed: false,
+          },
+          {
+            id: `evt-${Date.now()}-3`,
+            timestamp: 'Scheduled 19 Sep 2026',
+            location: 'Lagos MMIA Cargo Terminal 2',
+            status: 'Customs Single Window Verification',
+            description: 'Nigeria Customs Service electronic clearance release.',
+            completed: false,
+          },
+          {
+            id: `evt-${Date.now()}-4`,
+            timestamp: 'Scheduled 21 Sep 2026',
+            location: `${receiverCity}, Nigeria`,
+            status: 'Final Mile Delivery to Consignee',
+            description: 'Courier doorstep dispatch with live WhatsApp OTP verification.',
+            completed: false,
+          }
+        ]
+      };
+
+      registerShipment(newShipmentData);
       setStep(3);
     }
   };
@@ -63,7 +173,12 @@ export const ShipNowModal: React.FC<ShipNowModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-[#15110F]/80 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 animate-fadeIn">
+    <div 
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="ship-modal-title"
+      className="fixed inset-0 z-50 overflow-y-auto bg-[#15110F]/80 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 animate-fadeIn"
+    >
       <div className="bg-white w-full max-w-3xl rounded-md shadow-2xl border border-[#EAE4D8] overflow-hidden flex flex-col max-h-[92vh]">
         
         {/* Header */}
@@ -76,7 +191,7 @@ export const ShipNowModal: React.FC<ShipNowModalProps> = ({
               <div className="text-[11px] font-bold text-[#C9A227] tracking-widest uppercase">
                 EXPRESS BOOKING ENGINE
               </div>
-              <h2 className="font-display text-[24px] sm:text-[28px] tracking-wider leading-none text-white">
+              <h2 id="ship-modal-title" className="font-display text-[24px] sm:text-[28px] tracking-wider leading-none text-white">
                 DISPATCH VIA UK ⇄ NIGERIA CORRIDOR
               </h2>
             </div>
@@ -85,6 +200,7 @@ export const ShipNowModal: React.FC<ShipNowModalProps> = ({
           <button
             id="ship-modal-close-btn"
             onClick={onClose}
+            aria-label="Close booking modal"
             className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />

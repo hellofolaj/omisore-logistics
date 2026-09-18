@@ -178,6 +178,11 @@ export default function App() {
         <CustomerPortalModal
           isOpen={portalOpen}
           onClose={() => setPortalOpen(false)}
+          onTrackShipment={(waybill) => {
+            setPortalOpen(false);
+            setActiveWaybill(waybill);
+            setTrackingOpen(true);
+          }}
         />
       )}
     </div>
