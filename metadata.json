@@ -1,0 +1,7 @@
+{
+  "name": "Omisore Logistics Worldwide",
+  "description": "UK–Nigeria express cargo, document and parcel shipping, maritime freight, customs clearance, and real-time corridor tracking.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+

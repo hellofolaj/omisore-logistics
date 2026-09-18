@@ -1,0 +1,95 @@
+@import "tailwindcss";
+
+@theme {
+  --font-display: 'Bebas Neue', system-ui, sans-serif;
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  
+  --color-primary: #5C0F1E;
+  --color-primary-container: #780016;
+  --color-primary-dark: #40000E;
+  --color-gold: #C9A227;
+  --color-gold-bright: #F5B800;
+  --color-gold-container: #FDF6E2;
+  --color-ink: #15110F;
+  --color-ink-muted: #4A4A4A;
+  --color-cream: #F6F1E6;
+  --color-cream-light: #FCF9F2;
+  --color-cream-card: #FDFBF7;
+  --color-outline: #D8D1C5;
+  --color-outline-light: #EAE4D8;
+}
+
+.font-display {
+  font-family: 'Bebas Neue', system-ui, sans-serif;
+  letter-spacing: 0.03em;
+}
+
+.font-sans {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* Custom subtle scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #F6F1E6;
+}
+::-webkit-scrollbar-thumb {
+  background: #C9A227;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #5C0F1E;
+}
+
+/* Ken Burns continuous zoom & pan animation */
+@keyframes kenburns {
+  0% {
+    transform: scale(1) translate(0, 0);
+  }
+  50% {
+    transform: scale(1.08) translate(-1%, -1%);
+  }
+  100% {
+    transform: scale(1) translate(0, 0);
+  }
+}
+
+.animate-ken-burns {
+  animation: kenburns 24s ease-in-out infinite alternate;
+}
+
+/* Print styling for Waybill document export & PDF saving */
+@media print {
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
+  body {
+    background: #ffffff !important;
+    color: #111111 !important;
+  }
+  body * {
+    visibility: hidden;
+  }
+  #printable-waybill-doc,
+  #printable-waybill-doc * {
+    visibility: visible;
+  }
+  #printable-waybill-doc {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    display: block !important;
+    background: #ffffff !important;
+    color: #111111 !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+}
